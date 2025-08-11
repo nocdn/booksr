@@ -24,12 +24,17 @@ type Tag = {
   bgColor: string
 }
 
-export default function Search({ tags }: { tags: Tag[] }) {
+export default function Search({
+  tags,
+  onSubmit,
+}: {
+  tags: Tag[]
+  onSubmit: (tags: string[], url: string) => void
+}) {
   const firstInput = useRef<HTMLInputElement>(null)
   const [tagList, setTagList] = useState<string[]>([])
   const [showingCommand, setShowingCommand] = useState<boolean>(false)
-  const [availableTags, setAvailableTags] =
-    useState<{ value: string; label: string }[]>(tags)
+  const [availableTags, setAvailableTags] = useState<Tag[]>(tags)
   const [tagSearchValue, setTagSearchValue] = React.useState("")
 
   // Global "/" handler: focus main input when unfocused; open popover when focused.
@@ -41,10 +46,21 @@ export default function Search({ tags }: { tags: Tag[] }) {
       if (showingCommand) return
 
       const isMainInputFocused = document.activeElement === firstInput.current
-      e.preventDefault()
+
       if (isMainInputFocused) {
-        setShowingCommand(true)
+        const inputEl = firstInput.current
+        const value = inputEl?.value ?? ""
+        // Only open tag menu if the slash is preceded by whitespace or at the start
+        const caretPos = inputEl?.selectionStart ?? value.length
+        const prevChar = caretPos > 0 ? value[caretPos - 1] : ""
+        const precededBySpace = caretPos === 0 || /\s/.test(prevChar)
+
+        if (precededBySpace) {
+          e.preventDefault()
+          setShowingCommand(true)
+        }
       } else {
+        e.preventDefault()
         firstInput.current?.focus()
       }
     }

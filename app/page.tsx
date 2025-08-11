@@ -34,9 +34,13 @@ export default function Home() {
     },
   ]
 
+  const handleSubmit = (tags: string[], url: string) => {
+    console.log(tags, url)
+  }
+
   return (
     <div className="grid place-content-center mt-32">
-      <Search tags={tags} />
+      <Search tags={tags} onSubmit={handleSubmit} />
     </div>
   )
 }
