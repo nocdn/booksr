@@ -37,12 +37,10 @@ export default function Search({
   const [availableTags, setAvailableTags] = useState<Tag[]>(tags)
   const [tagSearchValue, setTagSearchValue] = React.useState("")
 
-  // Global "/" handler: focus main input when unfocused; open popover when focused.
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key !== "/") return
 
-      // If popover is open, don't hijack "/" – let the command input receive it
       if (showingCommand) return
 
       const isMainInputFocused = document.activeElement === firstInput.current
@@ -108,6 +106,13 @@ export default function Search({
               type="text"
               placeholder="Insert a link, or just plain text"
               className="[field-sizing:content] font-geist bg-transparent text-[14px] leading-none font-[450] outline-none placeholder:text-gray-400 mr-auto"
+              onKeyDown={(e) => {
+                if (e.key !== "Enter") return
+                if (showingCommand) return
+                e.preventDefault()
+                const urlValue = firstInput.current?.value?.trim() ?? ""
+                onSubmit(tagList, urlValue)
+              }}
             />
             <div className="flex items-center gap-1.5 text-sm font-geist">
               <AnimatePresence initial={false}>
