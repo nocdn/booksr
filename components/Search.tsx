@@ -20,13 +20,39 @@ import { Popover, PopoverContent, PopoverAnchor } from "@/components/ui/popover"
 type Tag = {
   value: string
   label: string
+  textColor: string
+  bgColor: string
 }
 
 export default function Search({ tags }: { tags: Tag[] }) {
   const firstInput = useRef<HTMLInputElement>(null)
-
   const [tagList, setTagList] = useState<string[]>([])
   const [showingCommand, setShowingCommand] = useState<boolean>(false)
+  const [availableTags, setAvailableTags] =
+    useState<{ value: string; label: string }[]>(tags)
+  const [tagSearchValue, setTagSearchValue] = React.useState("")
+
+  // Global "/" handler: focus main input when unfocused; open popover when focused.
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "/") return
+
+      // If popover is open, don't hijack "/" – let the command input receive it
+      if (showingCommand) return
+
+      const isMainInputFocused = document.activeElement === firstInput.current
+      e.preventDefault()
+      if (isMainInputFocused) {
+        setShowingCommand(true)
+      } else {
+        firstInput.current?.focus()
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [showingCommand])
+
+  // state moved above
 
   const removeTag = (label: string) => {
     // Remove from current selected list
@@ -41,14 +67,19 @@ export default function Search({ tags }: { tags: Tag[] }) {
     })
   }
 
-  const [availableTags, setAvailableTags] =
-    useState<{ value: string; label: string }[]>(tags)
-
-  const [tagSearchValue, setTagSearchValue] = React.useState("")
-
   return (
     <div className="flex flex-col gap-2.5">
-      <Popover open={showingCommand} onOpenChange={setShowingCommand}>
+      <Popover
+        open={showingCommand}
+        onOpenChange={(open) => {
+          setShowingCommand(open)
+          if (!open) {
+            setTimeout(() => {
+              firstInput.current?.focus()
+            }, 0)
+          }
+        }}
+      >
         <PopoverAnchor asChild>
           <div className="group flex h-11 items-center rounded-md border border-gray-200 px-3 shadow-xs transition-all focus-within:outline-2 focus-within:outline-offset-1 focus-within:outline-gray-700/45 w-3xl">
             <Plus
@@ -59,14 +90,6 @@ export default function Search({ tags }: { tags: Tag[] }) {
             <input
               ref={firstInput}
               type="text"
-              onKeyDown={(e) => {
-                console.log(e.key)
-                if (e.key === "/") {
-                  e.preventDefault()
-                  setShowingCommand(true)
-                  //   tagInput.current?.focus()
-                }
-              }}
               placeholder="Insert a link, or just plain text"
               className="[field-sizing:content] font-geist bg-transparent text-[14px] leading-none font-[450] outline-none placeholder:text-gray-400 mr-auto"
             />
@@ -117,6 +140,7 @@ export default function Search({ tags }: { tags: Tag[] }) {
               className="w-[200px] p-0 shadow-xs"
             >
               <motion.div
+                style={{ filter: "blur(0px)" }}
                 initial={{
                   opacity: 0,
                   filter: "blur(2px)",
@@ -176,6 +200,12 @@ export default function Search({ tags }: { tags: Tag[] }) {
                             }, 0)
                           }}
                         >
+                          <div
+                            className="w-2 h-2 rounded-full"
+                            style={{
+                              backgroundColor: option.textColor,
+                            }}
+                          />
                           {option.label}
                           <Check
                             className={cn(
