@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "motion/react"
 import { Badge } from "@/components/ui/badge"
 
 import * as React from "react"
-import { Check, ChevronsUpDown } from "lucide-react"
+import { Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
   Command,
@@ -111,68 +111,86 @@ export default function Search({ tags }: { tags: Tag[] }) {
         <AnimatePresence>
           {showingCommand && (
             <PopoverContent
+              asChild
               side="bottom"
               align="start"
               className="w-[200px] p-0 shadow-xs"
             >
-              <Command>
-                <CommandInput
-                  autoFocus
-                  placeholder="Filter tags"
-                  className="h-9"
-                />
-                <CommandList>
-                  <CommandEmpty>No tags found.</CommandEmpty>
-                  <CommandGroup>
-                    {availableTags.map((option) => (
-                      <CommandItem
-                        key={option.value}
-                        value={option.value}
-                        onSelect={(currentValue) => {
-                          const selected = availableTags.find(
-                            (t) => t.value === currentValue
-                          )
-                          if (!selected) {
+              <motion.div
+                initial={{
+                  opacity: 0,
+                  filter: "blur(2px)",
+                  scale: 0.95,
+                  y: 12,
+                }}
+                animate={{ opacity: 1, filter: "blur(0px)", scale: 1, y: 0 }}
+                exit={{ opacity: 0, filter: "blur(3px)", scale: 0.95, y: 12 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 420,
+                  damping: 32,
+                  mass: 0.7,
+                }}
+              >
+                <Command>
+                  <CommandInput
+                    autoFocus
+                    placeholder="Filter tags"
+                    className="h-9"
+                  />
+                  <CommandList>
+                    <CommandEmpty>No tags found.</CommandEmpty>
+                    <CommandGroup>
+                      {availableTags.map((option) => (
+                        <CommandItem
+                          key={option.value}
+                          value={option.value}
+                          onSelect={(currentValue) => {
+                            const selected = availableTags.find(
+                              (t) => t.value === currentValue
+                            )
+                            if (!selected) {
+                              setShowingCommand(false)
+                              return
+                            }
+
+                            // Add to tagList if not already present
+                            setTagList((prev) => {
+                              const next = prev.includes(selected.label)
+                                ? prev
+                                : [...prev, selected.label]
+                              return next
+                            })
+
+                            // Remove from availableTags
+                            setAvailableTags((prev) =>
+                              prev.filter((t) => t.value !== selected.value)
+                            )
+
+                            // Clear search highlight and close
+                            setTagSearchValue("")
                             setShowingCommand(false)
-                            return
-                          }
-
-                          // Add to tagList if not already present
-                          setTagList((prev) => {
-                            const next = prev.includes(selected.label)
-                              ? prev
-                              : [...prev, selected.label]
-                            return next
-                          })
-
-                          // Remove from availableTags
-                          setAvailableTags((prev) =>
-                            prev.filter((t) => t.value !== selected.value)
-                          )
-
-                          // Clear search highlight and close
-                          setTagSearchValue("")
-                          setShowingCommand(false)
-                          // Return focus to main input after closing
-                          setTimeout(() => {
-                            firstInput.current?.focus()
-                          }, 0)
-                        }}
-                      >
-                        {option.label}
-                        <Check
-                          className={cn(
-                            "ml-auto",
-                            tagSearchValue === option.value
-                              ? "opacity-100"
-                              : "opacity-0"
-                          )}
-                        />
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
+                            // Return focus to main input after closing
+                            setTimeout(() => {
+                              firstInput.current?.focus()
+                            }, 0)
+                          }}
+                        >
+                          {option.label}
+                          <Check
+                            className={cn(
+                              "ml-auto",
+                              tagSearchValue === option.value
+                                ? "opacity-100"
+                                : "opacity-0"
+                            )}
+                          />
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </motion.div>
             </PopoverContent>
           )}
         </AnimatePresence>
