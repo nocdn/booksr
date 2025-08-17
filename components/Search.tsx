@@ -66,13 +66,9 @@ export default function Search({
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [showingCommand])
 
-  // state moved above
-
   const removeTag = (label: string) => {
-    // Remove from current selected list
     setTagList((prevTags) => prevTags.filter((t) => t !== label))
 
-    // Return to available options if it exists in the canonical list and isn't already present
     setAvailableTags((prev) => {
       const option = tags.find((t) => t.label === label)
       if (!option) return prev
@@ -114,7 +110,10 @@ export default function Search({
                 onSubmit(tagList, urlValue)
               }}
             />
-            <div className="flex items-center gap-1.5 text-sm font-geist">
+            <motion.div
+              className="flex items-center gap-1.5 text-sm font-geist max-w-[50%] overflow-x-scroll justify-end"
+              style={{ scrollbarWidth: "none" }}
+            >
               <AnimatePresence initial={false}>
                 {tagList.map((tag) => (
                   <motion.div
@@ -149,7 +148,7 @@ export default function Search({
                   </motion.div>
                 ))}
               </AnimatePresence>
-            </div>
+            </motion.div>
           </div>
         </PopoverAnchor>
         <AnimatePresence>

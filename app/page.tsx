@@ -29,7 +29,7 @@ export default function Home() {
     },
     {
       value: "icons",
-      label: "Icon",
+      label: "Icons",
       textColor: "#803300",
       bgColor: "#FFF4EE",
     },
