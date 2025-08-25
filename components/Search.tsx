@@ -36,6 +36,7 @@ export default function Search({
   const [showingCommand, setShowingCommand] = useState<boolean>(false)
   const [availableTags, setAvailableTags] = useState<Tag[]>(tags)
   const [tagSearchValue, setTagSearchValue] = React.useState("")
+  const [isMobileViewport, setIsMobileViewport] = useState(false)
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -77,8 +78,17 @@ export default function Search({
     })
   }
 
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileViewport(window.innerWidth < 768)
+    }
+    handleResize()
+    window.addEventListener("resize", handleResize)
+    return () => window.removeEventListener("resize", handleResize)
+  }, [])
+
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className="flex flex-col items-center gap-2 md:gap-0 justify-center w-full">
       <Popover
         open={showingCommand}
         onOpenChange={(open) => {
@@ -91,11 +101,16 @@ export default function Search({
         }}
       >
         <PopoverAnchor asChild>
-          <div className="group flex h-11 items-center rounded-md border border-gray-200 px-3 shadow-xs transition-all focus-within:outline-2 focus-within:outline-offset-1 focus-within:outline-gray-700/45 w-3xl">
+          <div
+            className="group flex h-11 items-center rounded-md border border-gray-200 px-3 shadow-xs transition-all focus-within:outline-2 focus-within:outline-offset-1 focus-within:outline-gray-700/45 md:w-3xl w-full cursor-text"
+            onClick={() => {
+              firstInput.current?.focus()
+            }}
+          >
             <Plus
               size={17.5}
               strokeWidth={2.05}
-              className="mt-[1px] opacity-40 mx-[1px] mr-[8px]"
+              className="mt-[1px] opacity-40 mx-[1px] mr-[8px] cursor-pointer"
             />
             <input
               ref={firstInput}
@@ -110,45 +125,47 @@ export default function Search({
                 onSubmit(tagList, urlValue)
               }}
             />
-            <motion.div
-              className="flex items-center gap-1.5 text-sm font-geist max-w-[50%] overflow-x-scroll justify-end"
-              style={{ scrollbarWidth: "none" }}
-            >
-              <AnimatePresence initial={false}>
-                {tagList.map((tag) => (
-                  <motion.div
-                    key={tag}
-                    layout
-                    initial={{ opacity: 0, scale: 0.9, y: 6 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.9, y: -6 }}
-                    transition={{
-                      type: "spring",
-                      stiffness: 500,
-                      damping: 30,
-                      mass: 0.6,
-                    }}
-                    className="cursor-pointer"
-                    onClick={() => removeTag(tag)}
-                    title={`Remove tag: ${tag}`}
-                  >
-                    <Badge
-                      variant="secondary"
-                      className="flex items-center gap-1 bg-neutral-100 text-neutral-800 hover:text-red-500 hover:bg-red-100 dark:bg-neutral-800 dark:text-neutral-100 transition-colors duration-75"
+            {!isMobileViewport && (
+              <motion.div
+                className="flex items-center gap-1.5 text-sm font-geist max-w-[50%] overflow-x-scroll justify-end"
+                style={{ scrollbarWidth: "none" }}
+              >
+                <AnimatePresence initial={false}>
+                  {tagList.map((tag) => (
+                    <motion.div
+                      key={tag}
+                      layout
+                      initial={{ opacity: 0, scale: 0.9, y: 6 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.9, y: -6 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 500,
+                        damping: 30,
+                        mass: 0.6,
+                      }}
+                      className="cursor-pointer"
+                      onClick={() => removeTag(tag)}
+                      title={`Remove tag: ${tag}`}
                     >
-                      <span>{tag}</span>
-                      <button
-                        type="button"
-                        aria-label={`Remove ${tag}`}
-                        className="rounded p-0.5 hover:bg-neutral-200 dark:hover:bg-neutral-700 cursor-pointer"
+                      <Badge
+                        variant="secondary"
+                        className="flex items-center gap-1 bg-neutral-100 text-neutral-800 hover:text-red-500 hover:bg-red-100 dark:bg-neutral-800 dark:text-neutral-100 transition-colors duration-75"
                       >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </Badge>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </motion.div>
+                        <span>{tag}</span>
+                        <button
+                          type="button"
+                          aria-label={`Remove ${tag}`}
+                          className="rounded p-0.5 cursor-pointer"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </Badge>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </motion.div>
+            )}
           </div>
         </PopoverAnchor>
         <AnimatePresence>
@@ -245,6 +262,47 @@ export default function Search({
           )}
         </AnimatePresence>
       </Popover>
+      {isMobileViewport && (
+        <motion.div
+          className="flex items-center gap-1.5 text-sm font-geist overflow-x-scroll w-full"
+          style={{ scrollbarWidth: "none" }}
+        >
+          <AnimatePresence initial={false}>
+            {tagList.map((tag) => (
+              <motion.div
+                key={tag}
+                layout
+                initial={{ opacity: 0, scale: 0.9, y: 6 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: -6 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 500,
+                  damping: 30,
+                  mass: 0.6,
+                }}
+                className="cursor-pointer"
+                onClick={() => removeTag(tag)}
+                title={`Remove tag: ${tag}`}
+              >
+                <Badge
+                  variant="secondary"
+                  className="flex items-center gap-1 bg-neutral-100 text-neutral-800 hover:text-red-500 hover:bg-red-100 dark:bg-neutral-800 dark:text-neutral-100 transition-colors duration-75"
+                >
+                  <span>{tag}</span>
+                  <button
+                    type="button"
+                    aria-label={`Remove ${tag}`}
+                    className="rounded p-0.5 cursor-pointer"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </Badge>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </motion.div>
+      )}
     </div>
   )
 }

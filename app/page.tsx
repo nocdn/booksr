@@ -40,7 +40,7 @@ export default function Home() {
   }
 
   return (
-    <div className="grid place-content-center mt-32">
+    <div className="flex items-center justify-center mt-32 w-full px-8">
       <Search tags={tags} onSubmit={handleSubmit} />
     </div>
   )
