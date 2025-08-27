@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect, useRef } from "react"
-import { Plus, X } from "lucide-react"
+import { Loader, Plus, X } from "lucide-react"
 import { motion, AnimatePresence } from "motion/react"
 import { Badge } from "@/components/ui/badge"
 
@@ -27,9 +27,11 @@ type Tag = {
 export default function Search({
   tags,
   onSubmit,
+  isLoading,
 }: {
   tags: Tag[]
   onSubmit: (tags: string[], url: string) => void
+  isLoading: boolean
 }) {
   const firstInput = useRef<HTMLInputElement>(null)
   const [tagList, setTagList] = useState<string[]>([])
@@ -88,7 +90,10 @@ export default function Search({
   }, [])
 
   return (
-    <div className="flex flex-col items-center gap-2 md:gap-0 justify-center w-full">
+    <div
+      className="flex flex-col items-center gap-2 md:gap-0 justify-center w-full"
+      style={{ touchAction: "manipulation" }}
+    >
       <Popover
         open={showingCommand}
         onOpenChange={(open) => {
@@ -102,30 +107,61 @@ export default function Search({
       >
         <PopoverAnchor asChild>
           <div
-            className="group flex h-11 items-center rounded-md border border-gray-200 px-3 shadow-xs transition-all focus-within:outline-2 focus-within:outline-offset-1 focus-within:outline-gray-700/45 md:w-3xl w-full cursor-text"
+            className="group flex h-10 items-center rounded-sm border border-gray-200 px-2.5 shadow-xs transition-all focus-within:outline-none md:w-2xl w-full cursor-text bg-white"
             onClick={() => {
               firstInput.current?.focus()
             }}
           >
-            <Plus
-              size={17.5}
-              strokeWidth={2.05}
-              className="mt-[1px] opacity-40 mx-[1px] mr-[8px] cursor-pointer"
-            />
-            <input
-              ref={firstInput}
-              type="text"
-              placeholder="Insert a link, or just plain text"
-              className="[field-sizing:content] font-geist bg-transparent text-[14px] leading-none font-[450] outline-none placeholder:text-gray-400 mr-auto"
-              onKeyDown={(e) => {
-                if (e.key !== "Enter") return
-                if (showingCommand) return
-                e.preventDefault()
-                const urlValue = firstInput.current?.value?.trim() ?? ""
-                onSubmit(tagList, urlValue)
-              }}
-            />
-            {!isMobileViewport && (
+            <div className="flex items-center flex-1 min-w-0">
+              <AnimatePresence mode="wait">
+                {isLoading ? (
+                  <motion.div
+                    initial={{
+                      opacity: 0,
+                    }}
+                    animate={{
+                      opacity: 1,
+                    }}
+                    exit={{
+                      opacity: 0,
+                    }}
+                    className="mt-[1px] opacity-40 mx-[1px] mr-[9px]"
+                    transition={{
+                      duration: 0.3,
+                    }}
+                  >
+                    <div
+                      className="spinner mr-[0.5px]"
+                      style={{
+                        animation: "spin 1s linear infinite",
+                      }}
+                    >
+                      <Loader className="h-3.5 w-3.5" />
+                    </div>
+                  </motion.div>
+                ) : (
+                  <Plus
+                    size={17}
+                    strokeWidth={2.05}
+                    className="mt-[1px] opacity-40 mx-[1px] mr-[7px] cursor-pointer motion-opacity-in-0 motion-blur-in-[2px] motion-scale-in-50"
+                  />
+                )}
+              </AnimatePresence>
+              <input
+                ref={firstInput}
+                type="text"
+                placeholder="Insert a link, or just plain text"
+                className="[field-sizing:content] font-geist bg-transparent text-base leading-none font-[450] outline-none placeholder:text-gray-400 scale-[0.875] origin-left w-full"
+                onKeyDown={(e) => {
+                  if (e.key !== "Enter") return
+                  if (showingCommand) return
+                  e.preventDefault()
+                  const urlValue = firstInput.current?.value?.trim() ?? ""
+                  onSubmit(tagList, urlValue)
+                }}
+              />
+            </div>
+            {/* {isMobileViewport && (
               <motion.div
                 className="flex items-center gap-1.5 text-sm font-geist max-w-[50%] overflow-x-scroll justify-end"
                 style={{ scrollbarWidth: "none" }}
@@ -165,7 +201,7 @@ export default function Search({
                   ))}
                 </AnimatePresence>
               </motion.div>
-            )}
+            )} */}
           </div>
         </PopoverAnchor>
         <AnimatePresence>
@@ -174,7 +210,7 @@ export default function Search({
               asChild
               side="bottom"
               align="start"
-              className="w-[200px] p-0 shadow-xs"
+              className="w-[200px] p-0 shadow-xs font-medium"
             >
               <motion.div
                 style={{ filter: "blur(0px)" }}
@@ -197,7 +233,7 @@ export default function Search({
                   <CommandInput
                     autoFocus
                     placeholder="Filter tags"
-                    className="h-9"
+                    className="h-9 font-semibold"
                   />
                   <CommandList>
                     <CommandEmpty>No tags found.</CommandEmpty>
@@ -262,47 +298,45 @@ export default function Search({
           )}
         </AnimatePresence>
       </Popover>
-      {isMobileViewport && (
-        <motion.div
-          className="flex items-center gap-1.5 text-sm font-geist overflow-x-scroll w-full"
-          style={{ scrollbarWidth: "none" }}
-        >
-          <AnimatePresence initial={false}>
-            {tagList.map((tag) => (
-              <motion.div
-                key={tag}
-                layout
-                initial={{ opacity: 0, scale: 0.9, y: 6 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: -6 }}
-                transition={{
-                  type: "spring",
-                  stiffness: 500,
-                  damping: 30,
-                  mass: 0.6,
-                }}
-                className="cursor-pointer"
-                onClick={() => removeTag(tag)}
-                title={`Remove tag: ${tag}`}
+      <motion.div
+        className="flex items-center gap-1.5 text-sm font-geist overflow-x-scroll w-full md:w-2xl md:mt-3"
+        style={{ scrollbarWidth: "none" }}
+      >
+        <AnimatePresence initial={false} mode="popLayout">
+          {tagList.map((tag) => (
+            <motion.div
+              key={tag}
+              layout
+              initial={{ opacity: 0, scale: 0.9, y: 6 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: -6 }}
+              transition={{
+                type: "spring",
+                stiffness: 500,
+                damping: 30,
+                mass: 0.6,
+              }}
+              className="cursor-pointer"
+              onClick={() => removeTag(tag)}
+              title={`Remove tag: ${tag}`}
+            >
+              <Badge
+                variant="secondary"
+                className="flex items-center gap-1 bg-neutral-100 text-neutral-800 hover:text-red-500 hover:bg-red-100 dark:bg-neutral-800 dark:text-neutral-100 transition-colors duration-75"
               >
-                <Badge
-                  variant="secondary"
-                  className="flex items-center gap-1 bg-neutral-100 text-neutral-800 hover:text-red-500 hover:bg-red-100 dark:bg-neutral-800 dark:text-neutral-100 transition-colors duration-75"
+                <span>{tag}</span>
+                <button
+                  type="button"
+                  aria-label={`Remove ${tag}`}
+                  className="rounded p-0.5 cursor-pointer"
                 >
-                  <span>{tag}</span>
-                  <button
-                    type="button"
-                    aria-label={`Remove ${tag}`}
-                    className="rounded p-0.5 cursor-pointer"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </Badge>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </motion.div>
-      )}
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </Badge>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </motion.div>
     </div>
   )
 }
