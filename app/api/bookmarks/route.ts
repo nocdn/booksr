@@ -42,7 +42,7 @@ export async function POST(request: Request) {
       body: JSON.stringify({ link: url }),
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer sk_hnz6xtip2qq8f2fug93c0h4wnxw8xwjn`,
+        Authorization: `Bearer ${process.env.PEEKALINK_API_KEY}`,
       },
     })
 
