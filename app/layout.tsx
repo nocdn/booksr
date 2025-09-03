@@ -21,6 +21,9 @@ const lars = localFont({
 export const metadata: Metadata = {
   title: "Bookmark",
   description: "Bookmark",
+  icons: {
+    icon: "/star.svg",
+  },
 }
 
 export default function RootLayout({

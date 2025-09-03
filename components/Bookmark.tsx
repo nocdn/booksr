@@ -89,6 +89,11 @@ export default function Bookmark({
   const [isUrlHovered, setIsUrlHovered] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [isMobileDrag, setIsMobileDrag] = useState(false)
+  const [dragOpacity, setDragOpacity] = useState(1)
+
+  // Tuning constants for drag-to-fade behavior
+  const MAX_DRAG_FADE_DISTANCE_PX = 140
+  const MIN_OPACITY_WHILE_DRAG = 0.35
 
   // Handlers
   const handleMouseEnter = () => {
@@ -145,6 +150,16 @@ export default function Bookmark({
       dragElastic={0.25}
       dragMomentum={false}
       dragTransition={{ bounceStiffness: 80, bounceDamping: 10 }}
+      onDrag={(_, info) => {
+        const distance = Math.min(
+          Math.abs(info.offset.x ?? 0),
+          MAX_DRAG_FADE_DISTANCE_PX
+        )
+        const progress = distance / MAX_DRAG_FADE_DISTANCE_PX
+        const nextOpacity = 1 - progress * (1 - MIN_OPACITY_WHILE_DRAG)
+        setDragOpacity(nextOpacity)
+      }}
+      onDragEnd={() => setDragOpacity(1)}
       tabIndex={0}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -152,6 +167,7 @@ export default function Bookmark({
       style={{
         // transitionDelay: `${index * 0.035}s`,
         fontFamily: "Lars",
+        opacity: dragOpacity,
       }}
     >
       {!isEditing ? (
