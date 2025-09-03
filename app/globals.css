@@ -159,3 +159,13 @@ body {
   font-weight: 400;
   font-style: normal;
 }
+
+root::selection {
+  background-color: #e85a7a;
+  color: white;
+}
+
+root::-moz-selection {
+  background-color: #e85a7a;
+  color: white;
+}

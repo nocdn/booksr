@@ -88,6 +88,7 @@ export default function Bookmark({
   const [isExpanded, setIsExpanded] = useState(false)
   const [isUrlHovered, setIsUrlHovered] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
+  const [isMobileDrag, setIsMobileDrag] = useState(false)
 
   // Handlers
   const handleMouseEnter = () => {
@@ -115,10 +116,31 @@ export default function Bookmark({
     console.log("bookmark.url", newUrl)
   }, [newTitle, newUrl])
 
+  // Enable drag only on mobile/touch and small viewports
+  useEffect(() => {
+    const detectIsMobile = () => {
+      if (typeof window === "undefined") return false
+      const hasCoarsePointer =
+        window.matchMedia?.("(pointer: coarse)").matches ?? false
+      const hasTouchPoints =
+        typeof navigator !== "undefined" &&
+        ("maxTouchPoints" in navigator
+          ? (navigator as Navigator).maxTouchPoints > 0
+          : false)
+      const isSmallViewport = window.innerWidth <= 768
+      return (hasCoarsePointer || hasTouchPoints) && isSmallViewport
+    }
+
+    const update = () => setIsMobileDrag(detectIsMobile())
+    update()
+    window.addEventListener("resize", update)
+    return () => window.removeEventListener("resize", update)
+  }, [])
+
   return (
     <motion.div
       role="button"
-      drag="x"
+      drag={isMobileDrag ? "x" : false}
       dragConstraints={{ left: 0, right: 0 }}
       dragElastic={0.25}
       dragMomentum={false}
@@ -213,17 +235,16 @@ export default function Bookmark({
             {editingStage === "title" && (
               <motion.input
                 key="title"
-                initial={{ opacity: 0, y: 4, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -12, scale: 0.8, filter: "blur(2px)" }}
                 transition={{
                   type: "spring",
-                  stiffness: 300,
-                  damping: 30,
-                  opacity: { duration: 0.1 },
+                  stiffness: 400,
+                  damping: 25,
+                  mass: 0.8,
+                  opacity: { duration: 0.15 },
                 }}
                 type="text"
-                className="truncate text-[14.5px] font-lars focus:outline-none mr-auto origin-left"
+                className="truncate text-[14.5px] font-lars focus:outline-none mr-auto origin-left w-full"
                 ref={titleInputRef}
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
@@ -242,11 +263,17 @@ export default function Bookmark({
             {editingStage === "url" && (
               <motion.input
                 key="url"
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 4, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
+                exit={{ opacity: 0, y: -12, scale: 0.8, filter: "blur(2px)" }}
+                transition={{
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 30,
+                  opacity: { duration: 0.1 },
+                }}
                 type="text"
-                className="truncate text-[14.5px] font-lars focus:outline-none mr-auto origin-left"
+                className="truncate text-[14.5px] font-lars focus:outline-none mr-auto origin-left w-full"
                 ref={urlInputRef}
                 value={newUrl}
                 onChange={(e) => setNewUrl(e.target.value)}
@@ -276,7 +303,7 @@ export default function Bookmark({
                 }}
                 type="text"
                 placeholder="tags, separated, by commas"
-                className="truncate text-[14.5px] font-lars focus:outline-none mr-auto origin-left"
+                className="truncate text-[14.5px] font-lars focus:outline-none mr-auto origin-left w-full"
                 ref={tagsInputRef}
                 value={newTagsString}
                 onChange={(e) => setNewTagsString(e.target.value)}
