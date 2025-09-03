@@ -107,7 +107,7 @@ export default function Search({
       >
         <PopoverAnchor asChild>
           <div
-            className="group flex h-10 items-center rounded-sm border border-gray-200 px-2.5 shadow-xs transition-all focus-within:outline-none md:w-2xl w-full cursor-text bg-white"
+            className="group flex h-10 items-center rounded-sm border border-gray-200 px-2.5 shadow-xs transition-all focus-within:outline-none md:w-[680px] w-full cursor-text bg-white font-lars"
             onClick={() => {
               firstInput.current?.focus()
             }}
@@ -142,7 +142,7 @@ export default function Search({
                 ) : (
                   <Plus
                     size={17}
-                    strokeWidth={2.05}
+                    strokeWidth={2}
                     className="mt-[1px] opacity-40 mx-[1px] mr-[7px] cursor-pointer motion-opacity-in-0 motion-blur-in-[2px] motion-scale-in-50"
                   />
                 )}
@@ -151,12 +151,13 @@ export default function Search({
                 ref={firstInput}
                 type="text"
                 placeholder="Insert a link, or just plain text"
-                className="[field-sizing:content] font-geist bg-transparent text-base leading-none font-[450] outline-none placeholder:text-gray-400 scale-[0.875] origin-left w-full"
+                className="[field-sizing:content] font-geist bg-transparent text-base leading-none font-[450] outline-none placeholder:text-gray-500/75 scale-[0.875] origin-left w-full"
                 onKeyDown={(e) => {
                   if (e.key !== "Enter") return
                   if (showingCommand) return
                   e.preventDefault()
                   const urlValue = firstInput.current?.value?.trim() ?? ""
+                  if (!urlValue) return
                   onSubmit(tagList, urlValue)
                 }}
               />
@@ -276,7 +277,7 @@ export default function Search({
                           <div
                             className="w-2 h-2 rounded-full"
                             style={{
-                              backgroundColor: option.textColor,
+                              backgroundColor: option.bgColor,
                             }}
                           />
                           {option.label}

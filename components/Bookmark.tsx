@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react"
-import { Plus, X } from "lucide-react"
+import { Check, X, SaveAll } from "lucide-react"
 import { motion } from "motion/react"
 
 // --- Types ---
@@ -81,93 +81,26 @@ export default function Bookmark({
 
   // State
   const [isExpanded, setIsExpanded] = useState(false)
-  const [isAddingTag, setIsAddingTag] = useState(false)
-  const [isOptionHeld, setIsOptionHeld] = useState(false)
-  const [editingState, setEditingState] = useState<"none" | "title" | "url">(
-    "none"
-  )
-  const [editableTitle, setEditableTitle] = useState(bookmark.title)
-  const [editableUrl, setEditableUrl] = useState(bookmark.url)
   const [isUrlHovered, setIsUrlHovered] = useState(false)
-
-  useEffect(() => {
-    // keep local edit buffers in sync if bookmark prop changes
-    setEditableTitle(bookmark.title)
-    setEditableUrl(bookmark.url)
-  }, [bookmark.title, bookmark.url])
-
-  // Track Alt/Option key globally (like Svelte onMount listeners)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.altKey) setIsOptionHeld(true)
-    }
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (!e.altKey) setIsOptionHeld(false)
-    }
-    window.addEventListener("keydown", handleKeyDown)
-    window.addEventListener("keyup", handleKeyUp)
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown)
-      window.removeEventListener("keyup", handleKeyUp)
-    }
-  }, [])
+  const [isEditing, setIsEditing] = useState(false)
 
   // Handlers
-  const handleMouseEnter = () => setIsExpanded(true)
+  const handleMouseEnter = () => {
+    setIsExpanded(true)
+  }
   const handleMouseLeave = () => {
-    if (!isAddingTag) setIsExpanded(false)
+    setIsExpanded(false)
   }
 
-  const enterTitleEditMode: React.MouseEventHandler<HTMLAnchorElement> = (
-    e
-  ) => {
-    if (isOptionHeld) {
-      e.preventDefault()
-      setEditableTitle(bookmark.title)
-      setEditableUrl(bookmark.url)
-      setEditingState("title")
-    }
-  }
+  const [newTitle, setNewTitle] = useState(bookmark.title)
+  const [newUrl, setNewUrl] = useState(bookmark.url)
+  const titleInputRef = useRef<HTMLInputElement>(null)
+  const urlInputRef = useRef<HTMLInputElement>(null)
 
-  const enterUrlEditMode = (e?: React.SyntheticEvent) => {
-    e?.preventDefault()
-    if (isOptionHeld) {
-      setEditableTitle(bookmark.title)
-      setEditableUrl(bookmark.url)
-      setEditingState("url")
-    } else {
-      void navigator.clipboard.writeText(bookmark.url)
-    }
-  }
-
-  const handleEditKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (
-    e
-  ) => {
-    if (e.key === "Enter") {
-      onEditBookmark(bookmark.id, editableTitle, editableUrl)
-      setEditingState("none")
-    } else if (e.key === "Escape") {
-      setEditingState("none")
-    }
-  }
-
-  const [newTagValue, setNewTagValue] = useState("")
-  const newTagRef = useRef<HTMLInputElement | null>(null)
-
-  // Focus the tag input when toggled on
   useEffect(() => {
-    if (isAddingTag) newTagRef.current?.focus()
-  }, [isAddingTag])
-
-  const handleNewTag = () => {
-    const tag = newTagValue.trim()
-    if (tag) onAddTag(bookmark.id, tag)
-    setNewTagValue("")
-    setIsAddingTag(false)
-  }
-
-  const tagsRowExpanded =
-    isExpanded && (isOptionHeld || isAddingTag) && bookmark.tags.length > 0
+    console.log("bookmark.title", newTitle)
+    console.log("bookmark.url", newUrl)
+  }, [newTitle, newUrl])
 
   return (
     <div
@@ -175,137 +108,128 @@ export default function Bookmark({
       tabIndex={0}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className="select-text"
+      className={"select-text motion-opacity-in-0 motion-translate-y-in-[10%]"}
+      style={{
+        transitionDelay: `${index * 0.035}s`,
+        fontFamily: "Lars",
+      }}
     >
-      {/* Top row */}
-      <motion.div
-        role="button"
-        tabIndex={0}
-        initial={{ opacity: 0, y: -6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: index * 0.035 }}
-        className="flex items-center gap-2"
-      >
-        <img src={bookmark.favicon} alt={bookmark.title} className="h-4 w-4" />
-
-        {editingState === "title" ? (
-          <input
-            type="text"
-            value={editableTitle}
-            onChange={(e) => setEditableTitle(e.target.value)}
-            onKeyDown={handleEditKeyDown}
-            onBlur={() => setEditingState("none")}
-            autoFocus
-            className="font-geist w-full truncate bg-transparent text-[15px] font-medium focus:outline-none"
+      {!isEditing ? (
+        <motion.div
+          layout
+          key={0}
+          role="button"
+          tabIndex={0}
+          className="flex items-center gap-2"
+          title={Array.isArray(bookmark.tags) ? bookmark.tags.join(", ") : ""}
+        >
+          <img
+            src={bookmark.favicon}
+            alt={bookmark.title}
+            className="h-4 w-4 cursor-pointer"
+            onClick={() => {
+              setIsEditing(true)
+            }}
           />
-        ) : editingState === "url" ? (
-          <input
-            type="text"
-            value={editableUrl}
-            onChange={(e) => setEditableUrl(e.target.value)}
-            onKeyDown={handleEditKeyDown}
-            onBlur={() => setEditingState("none")}
-            autoFocus
-            className="font-google-sans-code w-full bg-transparent py-0.5 text-sm text-gray-400 focus:outline-none"
-          />
-        ) : (
-          <>
-            <a
-              href={bookmark.url}
-              className={`font-geist-sans truncate text-[15px] font-medium ${
-                !isOptionHeld ? "hover:text-[#c11a3f]" : "cursor-text"
-              }`}
-              onClick={enterTitleEditMode}
-            >
-              {bookmark.title}
-            </a>
 
-            <div
-              role="button"
-              tabIndex={0}
-              className="font-google-sans-code min-w-0 flex-1 text-sm text-gray-400"
-              onClick={enterUrlEditMode}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") enterUrlEditMode(e)
-              }}
-              onMouseEnter={() => setIsUrlHovered(true)}
-              onMouseLeave={() => setIsUrlHovered(false)}
-            >
-              <span className="block overflow-hidden text-ellipsis whitespace-nowrap">
-                {isUrlHovered ? displayUrlOnHover(bookmark.url) : formattedUrl}
-              </span>
+          <a
+            href={bookmark.url}
+            className="truncate text-[15px] font-medium hover:text-[#c11a3f]"
+          >
+            {bookmark.title}
+          </a>
+
+          <div
+            role="button"
+            tabIndex={0}
+            className="font-google-sans-code min-w-0 flex-1 text-sm text-gray-400"
+            onMouseEnter={() => setIsUrlHovered(true)}
+            onMouseLeave={() => setIsUrlHovered(false)}
+          >
+            <span className="block overflow-hidden text-ellipsis whitespace-nowrap">
+              {isUrlHovered ? displayUrlOnHover(bookmark.url) : formattedUrl}
+            </span>
+          </div>
+
+          <X
+            size={16}
+            className="ml-auto cursor-pointer text-red-500 transition-opacity duration-200 hover:text-red-800"
+            strokeWidth={2.25}
+            style={{
+              opacity: isExpanded ? 1 : 0,
+              pointerEvents: isExpanded ? "auto" : "none",
+            }}
+            onClick={() => onDeleteBookmark(bookmark.id)}
+          />
+
+          <p className="font-sf-pro-text flex-shrink-0 whitespace-nowrap text-[13.5px] text-gray-400">
+            {formattedDate}
+          </p>
+        </motion.div>
+      ) : (
+        <div className="flex gap-2 w-full mb-6 motion-opacity-in-0 motion-blur-in-[1px]">
+          <div className="flex flex-col gap-2 w-full">
+            <div className="flex flex-col gap-1">
+              <p className="text-xs font-jetbrains-mono font-semibold">TITLE</p>
+              <input
+                type="text"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault()
+                    urlInputRef.current?.focus()
+                  }
+                }}
+                ref={titleInputRef}
+                className="text-sm w-full font-jetbrains-mono border border-gray-200 rounded-sm px-1.5 py-1 focus:outline-none"
+              />
             </div>
-
-            <X
-              size={16}
-              className="ml-auto cursor-pointer text-red-500 transition-opacity duration-200 hover:text-red-800"
-              strokeWidth={2.25}
-              style={{
-                opacity: isExpanded && isOptionHeld ? 1 : 0,
-                pointerEvents: isExpanded && isOptionHeld ? "auto" : "none",
-              }}
-              onClick={() => onDeleteBookmark(bookmark.id)}
-            />
-
-            <p className="font-sf-pro-text flex-shrink-0 whitespace-nowrap text-[13.5px] text-gray-400">
-              {formattedDate}
-            </p>
-          </>
-        )}
-      </motion.div>
-
-      {/* Tags row */}
-      <div
-        className={`flex w-full items-center gap-2 transition-all ${
-          tagsRowExpanded ? "h-8" : "h-0"
-        }`}
-      >
-        {bookmark.tags.length > 0 &&
-          isExpanded &&
-          (isOptionHeld || isAddingTag) && (
-            <>
-              {bookmark.tags.map((tag) => (
-                <button
-                  key={tag}
-                  onClick={() => onRemoveTag(bookmark.id, tag)}
-                  className="font-google-sans-code mt-1 w-fit cursor-pointer rounded-sm bg-[#F1F1F1] px-2 py-1 text-xs font-medium text-[#787879] transition-colors hover:bg-[#FFEEED] hover:text-[#FF574B]"
-                >
-                  {tag.toUpperCase()}
-                </button>
-              ))}
-
-              {isAddingTag ? (
-                <input
-                  type="text"
-                  ref={newTagRef}
-                  value={newTagValue}
-                  onChange={(e) => setNewTagValue(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      handleNewTag()
-                    } else if (e.key === "Escape") {
-                      setIsAddingTag(false)
-                      setNewTagValue("")
-                    }
-                  }}
-                  onBlur={() => {
-                    setIsAddingTag(false)
-                    setNewTagValue("")
-                  }}
-                  className="font-google-sans-code mt-1 w-fit py-1 pl-1.5 text-xs font-medium uppercase focus:outline-gray-300"
-                />
-              ) : (
-                <div>
-                  <Plus
-                    size={16}
-                    className="cursor-pointer text-[#787879]"
-                    onClick={() => setIsAddingTag(true)}
-                  />
-                </div>
-              )}
-            </>
-          )}
-      </div>
+            <div className="flex flex-col gap-2 w-full">
+              <p className="text-xs font-jetbrains-mono font-semibold">
+                URL
+                <span className="text-gray-300 text-[11.35px] ml-1">
+                  (PROTOCOL)
+                </span>
+              </p>
+              <input
+                type="text"
+                value={newUrl}
+                onChange={(e) => setNewUrl(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault()
+                    onEditBookmark(bookmark.id, newTitle, newUrl)
+                    setIsEditing(false)
+                  }
+                }}
+                ref={urlInputRef}
+                className="text-sm w-full font-jetbrains-mono border border-gray-200 rounded-sm px-1.5 py-1 focus:outline-none"
+              />
+            </div>
+            <div className="flex gap-2 w-full justify-between md:justify-end mt-1">
+              <div className="flex items-center gap-2 text-gray-400 text-[13px] font-jetbrains-mono font-semibold mr-auto ml-0.5">
+                EDITING...
+              </div>
+              <button
+                className="text-[13px] font-jetbrains-mono font-semibold border border-gray-200 rounded-sm px-2.5 py-1 text-red-600 cursor-pointer hover:bg-gray-100 transition-all duration-100"
+                onClick={() => setIsEditing(false)}
+              >
+                CANCEL
+              </button>
+              <button
+                className="text-[13px] font-jetbrains-mono font-semibold border border-gray-200 rounded-sm px-2.5 py-1 flex items-center gap-1 text-blue-600 cursor-pointer hover:bg-gray-100 transition-all duration-100"
+                onClick={() => {
+                  onEditBookmark(bookmark.id, newTitle, newUrl)
+                  setIsEditing(false)
+                }}
+              >
+                SAVE <Check size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
