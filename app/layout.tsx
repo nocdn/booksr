@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 })
 
 const lars = localFont({
-  src: "../public/fonts/LarsTrial-Regular.otf",
+  src: "../public/fonts/F-Regular.otf",
   variable: "--font-lars",
 })
 

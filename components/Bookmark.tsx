@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react"
 import { Check, X, SaveAll } from "lucide-react"
-import { motion } from "motion/react"
+import { AnimatePresence, motion } from "motion/react"
 
 // --- Types ---
 export type BookmarkType = {
@@ -15,7 +15,12 @@ export type BookmarkType = {
 export type BookmarkProps = {
   bookmark: BookmarkType
   onDeleteBookmark: (id: number) => void
-  onEditBookmark: (id: number, title: string, url: string) => void
+  onEditBookmark: (
+    id: number,
+    title: string,
+    url: string,
+    tags: string[]
+  ) => void
   onAddTag: (bookmarkId: number, tag: string) => void
   onRemoveTag: (bookmarkId: number, tag: string) => void
   index: number // used for staggered animation delay
@@ -94,8 +99,16 @@ export default function Bookmark({
 
   const [newTitle, setNewTitle] = useState(bookmark.title)
   const [newUrl, setNewUrl] = useState(bookmark.url)
+  const [newTagsString, setNewTagsString] = useState(
+    Array.isArray(bookmark.tags) ? bookmark.tags.join(", ") : ""
+  )
   const titleInputRef = useRef<HTMLInputElement>(null)
   const urlInputRef = useRef<HTMLInputElement>(null)
+  const tagsInputRef = useRef<HTMLInputElement>(null)
+
+  const [editingStage, setEditingStage] = useState<
+    "title" | "url" | "tags" | "none"
+  >("none")
 
   useEffect(() => {
     console.log("bookmark.title", newTitle)
@@ -103,14 +116,19 @@ export default function Bookmark({
   }, [newTitle, newUrl])
 
   return (
-    <div
+    <motion.div
       role="button"
+      drag="x"
+      dragConstraints={{ left: 0, right: 0 }}
+      dragElastic={0.25}
+      dragMomentum={false}
+      dragTransition={{ bounceStiffness: 80, bounceDamping: 10 }}
       tabIndex={0}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       className={"select-text motion-opacity-in-0 motion-translate-y-in-[10%]"}
       style={{
-        transitionDelay: `${index * 0.035}s`,
+        // transitionDelay: `${index * 0.035}s`,
         fontFamily: "Lars",
       }}
     >
@@ -128,13 +146,19 @@ export default function Bookmark({
             alt={bookmark.title}
             className="h-4 w-4 cursor-pointer"
             onClick={() => {
+              setNewTitle(bookmark.title)
+              setNewUrl(bookmark.url)
+              setNewTagsString(
+                Array.isArray(bookmark.tags) ? bookmark.tags.join(", ") : ""
+              )
               setIsEditing(true)
+              setEditingStage("title")
             }}
           />
 
           <a
             href={bookmark.url}
-            className="truncate text-[15px] font-medium hover:text-[#c11a3f]"
+            className="truncate text-[14.5px] font-lars hover:text-[#c11a3f]"
           >
             {bookmark.title}
           </a>
@@ -142,7 +166,7 @@ export default function Bookmark({
           <div
             role="button"
             tabIndex={0}
-            className="font-google-sans-code min-w-0 flex-1 text-sm text-gray-400"
+            className="font-lars min-w-0 flex-1 text-sm text-gray-400"
             onMouseEnter={() => setIsUrlHovered(true)}
             onMouseLeave={() => setIsUrlHovered(false)}
           >
@@ -167,69 +191,120 @@ export default function Bookmark({
           </p>
         </motion.div>
       ) : (
-        <div className="flex gap-2 w-full mb-6 motion-opacity-in-0 motion-blur-in-[1px]">
-          <div className="flex flex-col gap-2 w-full">
-            <div className="flex flex-col gap-1">
-              <p className="text-xs font-jetbrains-mono font-semibold">TITLE</p>
-              <input
+        <motion.div
+          layout
+          key={0}
+          role="button"
+          tabIndex={0}
+          className="flex items-center gap-2"
+          title={Array.isArray(bookmark.tags) ? bookmark.tags.join(", ") : ""}
+        >
+          <img
+            src={bookmark.favicon}
+            alt={bookmark.title}
+            className="h-4 w-4 cursor-pointer"
+            onClick={() => {
+              setIsEditing(false)
+              setEditingStage("none")
+            }}
+          />
+
+          <AnimatePresence mode="popLayout">
+            {editingStage === "title" && (
+              <motion.input
+                key="title"
+                initial={{ opacity: 0, y: 4, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -12, scale: 0.8, filter: "blur(2px)" }}
+                transition={{
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 30,
+                  opacity: { duration: 0.1 },
+                }}
                 type="text"
+                className="truncate text-[14.5px] font-lars focus:outline-none mr-auto origin-left"
+                ref={titleInputRef}
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
-                    e.preventDefault()
-                    urlInputRef.current?.focus()
+                    setEditingStage("url")
+                  } else if (e.key === "Escape") {
+                    setIsEditing(false)
+                    setEditingStage("none")
                   }
                 }}
-                ref={titleInputRef}
-                className="text-sm w-full font-jetbrains-mono border border-gray-200 rounded-sm px-1.5 py-1 focus:outline-none"
+                onFocus={(e) => e.target.select()}
+                autoFocus
               />
-            </div>
-            <div className="flex flex-col gap-2 w-full">
-              <p className="text-xs font-jetbrains-mono font-semibold">
-                URL
-                <span className="text-gray-300 text-[11.35px] ml-1">
-                  (PROTOCOL)
-                </span>
-              </p>
-              <input
+            )}
+            {editingStage === "url" && (
+              <motion.input
+                key="url"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
                 type="text"
+                className="truncate text-[14.5px] font-lars focus:outline-none mr-auto origin-left"
+                ref={urlInputRef}
                 value={newUrl}
                 onChange={(e) => setNewUrl(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
-                    e.preventDefault()
-                    onEditBookmark(bookmark.id, newTitle, newUrl)
+                    setEditingStage("tags")
+                  } else if (e.key === "Escape") {
                     setIsEditing(false)
+                    setEditingStage("none")
                   }
                 }}
-                ref={urlInputRef}
-                className="text-sm w-full font-jetbrains-mono border border-gray-200 rounded-sm px-1.5 py-1 focus:outline-none"
+                onFocus={(e) => e.target.select()}
+                autoFocus
               />
-            </div>
-            <div className="flex gap-2 w-full justify-between md:justify-end mt-1">
-              <div className="flex items-center gap-2 text-gray-400 text-[13px] font-jetbrains-mono font-semibold mr-auto ml-0.5">
-                EDITING...
-              </div>
-              <button
-                className="text-[13px] font-jetbrains-mono font-semibold border border-gray-200 rounded-sm px-2.5 py-1 text-red-600 cursor-pointer hover:bg-gray-100 transition-all duration-100"
-                onClick={() => setIsEditing(false)}
-              >
-                CANCEL
-              </button>
-              <button
-                className="text-[13px] font-jetbrains-mono font-semibold border border-gray-200 rounded-sm px-2.5 py-1 flex items-center gap-1 text-blue-600 cursor-pointer hover:bg-gray-100 transition-all duration-100"
-                onClick={() => {
-                  onEditBookmark(bookmark.id, newTitle, newUrl)
-                  setIsEditing(false)
+            )}
+            {editingStage === "tags" && (
+              <motion.input
+                key="tags"
+                initial={{ opacity: 0, y: 4, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -12, scale: 0.8, filter: "blur(2px)" }}
+                transition={{
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 30,
+                  opacity: { duration: 0.1 },
                 }}
-              >
-                SAVE <Check size={16} />
-              </button>
-            </div>
-          </div>
-        </div>
+                type="text"
+                placeholder="tags, separated, by commas"
+                className="truncate text-[14.5px] font-lars focus:outline-none mr-auto origin-left"
+                ref={tagsInputRef}
+                value={newTagsString}
+                onChange={(e) => setNewTagsString(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    const parsedTags = newTagsString
+                      .split(",")
+                      .map((t) => t.trim())
+                      .filter((t) => t.length > 0)
+                    onEditBookmark(bookmark.id, newTitle, newUrl, parsedTags)
+                    setIsEditing(false)
+                    setEditingStage("none")
+                  } else if (e.key === "Escape") {
+                    setIsEditing(false)
+                    setEditingStage("none")
+                  }
+                }}
+                onFocus={(e) => e.target.select()}
+                autoFocus
+              />
+            )}
+          </AnimatePresence>
+
+          <p className="font-sf-pro-text flex-shrink-0 whitespace-nowrap text-[13.5px] text-gray-400">
+            {formattedDate}
+          </p>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   )
 }

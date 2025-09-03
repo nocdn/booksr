@@ -142,8 +142,8 @@ export default function Search({
                 ) : (
                   <Plus
                     size={17}
-                    strokeWidth={2}
-                    className="mt-[1px] opacity-40 mx-[1px] mr-[7px] cursor-pointer motion-opacity-in-0 motion-blur-in-[2px] motion-scale-in-50"
+                    strokeWidth={1.75}
+                    className="mt-[1px] opacity-50 mx-[1px] mr-[7px] cursor-pointer motion-opacity-in-0 motion-blur-in-[2px] motion-scale-in-50"
                   />
                 )}
               </AnimatePresence>

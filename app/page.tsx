@@ -85,19 +85,78 @@ export default function Home() {
   }, [])
 
   return (
-    <div className="flex items-center justify-center mt-16 md:mt-36 w-full px-8 flex-col gap-4">
+    <div className="flex items-center justify-center mt-16 md:mt-36 w-full px-8 flex-col gap-2">
       <Search tags={tags} onSubmit={handleSubmit} isLoading={isLoading} />
       <div className="font-geist-mono mx-0.5 flex items-center justify-between border-b border-gray-200 py-3 text-[13px] text-[#6f6f6f] w-full md:w-[680px]">
         <p className="font-lars">Title</p>
-        <p className="font-lars">Created At</p>
+        <p className="font-lars">Created at</p>
       </div>
-      <div className="ml-[3px] flex flex-col gap-3 w-full md:w-2xl">
+      <div className="mx-0.5 flex flex-col gap-4 w-full md:w-2xl mt-2.5">
         {bookmarks.map((bookmark, index) => (
           <Bookmark
             key={bookmark.id}
             bookmark={bookmark}
-            onDeleteBookmark={() => {}}
-            onEditBookmark={() => {}}
+            onDeleteBookmark={() => {
+              fetch("/api/bookmarks", {
+                method: "DELETE",
+                body: JSON.stringify({ id: bookmark.id }),
+              })
+                .then((res) => {
+                  if (!res.ok) {
+                    console.error("API error:", res.statusText)
+                    return
+                  }
+                  setBookmarks((prev) =>
+                    prev.filter((b) => b.id !== bookmark.id)
+                  )
+                })
+                .catch((err) => {
+                  console.error("Request failed:", err)
+                })
+                .finally(() => {
+                  setIsLoading(false)
+                })
+            }}
+            onEditBookmark={(id, title, url, tags) => {
+              const previousBookmark = bookmarks.find((b) => b.id === id)
+
+              let computedFavicon = previousBookmark?.favicon
+              try {
+                const hostname = new URL(url).hostname.replace(/^www\./, "")
+                computedFavicon = `https://www.google.com/s2/favicons?domain=${hostname}&sz=256`
+              } catch {}
+
+              // Optimistic update
+              setBookmarks((prev) =>
+                prev.map((b) =>
+                  b.id === id
+                    ? { ...b, title, url, tags, favicon: computedFavicon }
+                    : b
+                )
+              )
+
+              const rollback = () => {
+                if (!previousBookmark) return
+                setBookmarks((prev) =>
+                  prev.map((b) => (b.id === id ? previousBookmark : b))
+                )
+              }
+
+              fetch("/api/bookmarks", {
+                method: "PUT",
+                body: JSON.stringify({ id, title, url, tags }),
+              })
+                .then((res) => {
+                  if (!res.ok) {
+                    console.error("API error:", res.statusText)
+                    rollback()
+                  }
+                })
+                .catch((err) => {
+                  console.error("Request failed:", err)
+                  rollback()
+                })
+            }}
             onAddTag={() => {}}
             onRemoveTag={() => {}}
             index={index}

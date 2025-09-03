@@ -86,3 +86,98 @@ export async function POST(request: Request) {
     )
   }
 }
+
+export async function PUT(request: Request) {
+  try {
+    const body = await request.json()
+    const { id, title, url, tags } = body as {
+      id?: number
+      title?: string
+      url?: string
+      tags?: string[]
+    }
+
+    if (!id) {
+      return NextResponse.json({ error: "ID is required" }, { status: 400 })
+    }
+
+    // Build update object with only provided fields
+    const updateData: any = {}
+
+    if (title !== undefined) {
+      updateData.title = title
+    }
+
+    if (url !== undefined) {
+      // Validate URL format if provided
+      try {
+        new URL(url)
+      } catch {
+        return NextResponse.json(
+          { error: "Invalid URL format" },
+          { status: 400 }
+        )
+      }
+
+      updateData.url = url
+
+      // Update favicon if URL changed
+      const hostname = new URL(url).hostname.replace(/^www\./, "")
+      updateData.favicon = `https://www.google.com/s2/favicons?domain=${hostname}&sz=256`
+    }
+
+    if (tags !== undefined) {
+      updateData.tags = Array.isArray(tags) ? tags : []
+    }
+
+    // Update in Supabase and return the updated row
+    const { data: updated, error } = await supabaseAdmin
+      .from("bookmarks")
+      .update(updateData)
+      .eq("id", id)
+      .select("*")
+      .single()
+
+    if (error) {
+      console.error("Supabase update error:", error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json(updated)
+  } catch (error) {
+    console.error("Error updating bookmark:", error)
+    return NextResponse.json(
+      { error: "Failed to update bookmark" },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const body = await request.json()
+    const { id } = body as { id?: number }
+
+    if (!id) {
+      return NextResponse.json({ error: "ID is required" }, { status: 400 })
+    }
+
+    const { error } = await supabaseAdmin
+      .from("bookmarks")
+      .delete()
+      .eq("id", id)
+
+    if (error) {
+      console.error("Supabase delete error:", error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error("Error deleting bookmark:", error)
+    return NextResponse.json(
+      { error: "Failed to delete bookmark" },
+      { status: 500 }
+    )
+  }
+}
