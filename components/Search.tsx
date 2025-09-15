@@ -27,10 +27,12 @@ export default function Search({
   tags,
   onSubmit,
   isLoading,
+  onFilterChange,
 }: {
   tags: Tag[]
   onSubmit: (tags: string[], url: string) => void
   isLoading: boolean
+  onFilterChange?: (query: string, selectedTags: string[]) => void
 }) {
   const firstInput = useRef<HTMLInputElement>(null)
   const [tagList, setTagList] = useState<string[]>([])
@@ -39,6 +41,7 @@ export default function Search({
   const [tagSearchValue, setTagSearchValue] = React.useState("")
   const [isMobileViewport, setIsMobileViewport] = useState(false)
   const [newTagValue, setNewTagValue] = useState("")
+  const [query, setQuery] = useState("")
 
   useEffect(() => {
     setAvailableTags((prev) => {
@@ -97,6 +100,11 @@ export default function Search({
     window.addEventListener("resize", handleResize)
     return () => window.removeEventListener("resize", handleResize)
   }, [])
+
+  useEffect(() => {
+    onFilterChange?.(query, tagList)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, tagList])
 
   return (
     <div
@@ -163,11 +171,13 @@ export default function Search({
                 className={`[field-sizing:content] font-geist bg-transparent text-base leading-none font-[450] outline-none placeholder:text-gray-500/75 scale-[0.875] origin-left w-full translate-y-0.25 ${
                   isLoading ? "opacity-80" : "ml-0.25 md:ml-0 opacity-100"
                 }`}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key !== "Enter") return
                   if (showingCommand) return
                   e.preventDefault()
-                  let urlValue = firstInput.current?.value?.trim() ?? ""
+                  let urlValue = query.trim()
                   if (!urlValue) return
                   if (!urlValue.startsWith("http")) {
                     urlValue = "https://" + urlValue
@@ -176,47 +186,6 @@ export default function Search({
                 }}
               />
             </div>
-            {/* {isMobileViewport && (
-              <motion.div
-                className="flex items-center gap-1.5 text-sm font-geist max-w-[50%] overflow-x-scroll justify-end"
-                style={{ scrollbarWidth: "none" }}
-              >
-                <AnimatePresence initial={false}>
-                  {tagList.map((tag) => (
-                    <motion.div
-                      key={tag}
-                      layout
-                      initial={{ opacity: 0, scale: 0.9, y: 6 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.9, y: -6 }}
-                      transition={{
-                        type: "spring",
-                        stiffness: 500,
-                        damping: 30,
-                        mass: 0.6,
-                      }}
-                      className="cursor-pointer"
-                      onClick={() => removeTag(tag)}
-                      title={`Remove tag: ${tag}`}
-                    >
-                      <Badge
-                        variant="secondary"
-                        className="flex items-center gap-1 bg-neutral-100 text-neutral-800 hover:text-red-500 hover:bg-red-100 dark:bg-neutral-800 dark:text-neutral-100 transition-colors duration-75"
-                      >
-                        <span>{tag}</span>
-                        <button
-                          type="button"
-                          aria-label={`Remove ${tag}`}
-                          className="rounded p-0.5 cursor-pointer"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </Badge>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </motion.div>
-            )} */}
           </div>
         </PopoverAnchor>
         <AnimatePresence>
