@@ -57,11 +57,11 @@ export async function POST(request: Request) {
     // Normalize tags to array (supports array or newline-separated string)
     let tagsArray: string[] = []
     if (Array.isArray(tags)) {
-      tagsArray = tags
+      tagsArray = tags.map((t) => t.toLowerCase())
     } else if (typeof tags === "string") {
       tagsArray = tags
         .split(/\r?\n/)
-        .map((t) => t.trim())
+        .map((t) => t.trim().toLowerCase())
         .filter(Boolean)
     }
 
