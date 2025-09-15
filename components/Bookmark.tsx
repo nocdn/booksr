@@ -90,6 +90,7 @@ export default function Bookmark({
   const [isEditing, setIsEditing] = useState(false)
   const [isMobileDrag, setIsMobileDrag] = useState(false)
   const [dragOpacity, setDragOpacity] = useState(1)
+  const [isOverMaxDragDistance, setIsOverMaxDragDistance] = useState(false)
 
   // Tuning constants for drag-to-fade behavior
   const MAX_DRAG_FADE_DISTANCE_PX = 140
@@ -157,17 +158,29 @@ export default function Bookmark({
         )
         const progress = distance / MAX_DRAG_FADE_DISTANCE_PX
         const nextOpacity = 1 - progress * (1 - MIN_OPACITY_WHILE_DRAG)
+        setIsOverMaxDragDistance(progress >= 1)
         setDragOpacity(nextOpacity)
       }}
-      onDragEnd={() => setDragOpacity(1)}
+      onDragEnd={() => {
+        if (isOverMaxDragDistance) {
+          onDeleteBookmark(bookmark.id)
+        } else {
+          setDragOpacity(1)
+          setIsOverMaxDragDistance(false)
+        }
+      }}
       tabIndex={0}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       className={"select-text motion-opacity-in-0 motion-translate-y-in-[10%]"}
       style={{
-        // transitionDelay: `${index * 0.035}s`,
         fontFamily: "Lars",
         opacity: dragOpacity,
+        backgroundColor: isOverMaxDragDistance ? "#FFF0F0" : "transparent",
+        color: isOverMaxDragDistance ? "#c11a3f" : "inherit",
+        boxShadow: isOverMaxDragDistance ? "0 0 0 6px #FFF0F0" : "none",
+        transition:
+          "background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease",
       }}
     >
       {!isEditing ? (
@@ -215,7 +228,7 @@ export default function Bookmark({
 
           <X
             size={16}
-            className="ml-auto cursor-pointer text-red-500 transition-opacity duration-200 hover:text-red-800"
+            className="ml-auto cursor-pointer text-red-500 transition-opacity duration-200 hover:text-red-800 hidden md:block"
             strokeWidth={2.25}
             style={{
               opacity: isExpanded ? 1 : 0,
@@ -253,11 +266,8 @@ export default function Bookmark({
                 key="title"
                 exit={{ opacity: 0, y: -12, scale: 0.8, filter: "blur(2px)" }}
                 transition={{
-                  type: "spring",
-                  stiffness: 400,
-                  damping: 25,
-                  mass: 0.8,
-                  opacity: { duration: 0.15 },
+                  duration: 0.2,
+                  ease: [0.25, 0.1, 0.25, 1],
                 }}
                 type="text"
                 className="truncate text-[14.5px] font-lars focus:outline-none mr-auto origin-left w-full"
@@ -283,10 +293,8 @@ export default function Bookmark({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12, scale: 0.8, filter: "blur(2px)" }}
                 transition={{
-                  type: "spring",
-                  stiffness: 300,
-                  damping: 30,
-                  opacity: { duration: 0.1 },
+                  duration: 0.2,
+                  ease: [0.25, 0.1, 0.25, 1],
                 }}
                 type="text"
                 className="truncate text-[14.5px] font-lars focus:outline-none mr-auto origin-left w-full"
@@ -312,10 +320,8 @@ export default function Bookmark({
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -12, scale: 0.8, filter: "blur(2px)" }}
                 transition={{
-                  type: "spring",
-                  stiffness: 300,
-                  damping: 30,
-                  opacity: { duration: 0.1 },
+                  duration: 0.2,
+                  ease: [0.25, 0.1, 0.25, 1],
                 }}
                 type="text"
                 placeholder="tags, separated, by commas"

@@ -151,13 +151,18 @@ export default function Search({
                 ref={firstInput}
                 type="text"
                 placeholder="Insert a link, or just plain text"
-                className="[field-sizing:content] font-geist bg-transparent text-base leading-none font-[450] outline-none placeholder:text-gray-500/75 scale-[0.875] origin-left w-full"
+                className={`[field-sizing:content] font-geist bg-transparent text-base leading-none font-[450] outline-none placeholder:text-gray-500/75 scale-[0.875] origin-left w-full translate-y-0.25 ${
+                  isLoading ? "opacity-80" : "ml-0.25 md:ml-0 opacity-100"
+                }`}
                 onKeyDown={(e) => {
                   if (e.key !== "Enter") return
                   if (showingCommand) return
                   e.preventDefault()
-                  const urlValue = firstInput.current?.value?.trim() ?? ""
+                  let urlValue = firstInput.current?.value?.trim() ?? ""
                   if (!urlValue) return
+                  if (!urlValue.startsWith("http")) {
+                    urlValue = "https://" + urlValue
+                  }
                   onSubmit(tagList, urlValue)
                 }}
               />
