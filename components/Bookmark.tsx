@@ -7,7 +7,7 @@ export type BookmarkType = {
   id: number
   title: string
   url: string
-  tags: string[]
+  tags: string[] | string
   favicon: string
   createdAt: string // expects format like "DD/MM/YYYY, HH:MM:SS"
 }
@@ -62,6 +62,31 @@ function displayUrlOnHover(url: string) {
   return cleanUrl
 }
 
+function parseTagsToArray(tags: unknown): string[] {
+  if (Array.isArray(tags)) {
+    return tags
+      .map((t) => String(t))
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0)
+  }
+  if (typeof tags === "string") {
+    try {
+      const parsed = JSON.parse(tags)
+      if (Array.isArray(parsed)) {
+        return parsed
+          .map((t) => String(t))
+          .map((t) => t.trim())
+          .filter((t) => t.length > 0)
+      }
+    } catch {}
+    return tags
+      .split(",")
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0)
+  }
+  return []
+}
+
 // --- Component ---
 export default function Bookmark({
   bookmark,
@@ -107,7 +132,7 @@ export default function Bookmark({
   const [newTitle, setNewTitle] = useState(bookmark.title)
   const [newUrl, setNewUrl] = useState(bookmark.url)
   const [newTagsString, setNewTagsString] = useState(
-    Array.isArray(bookmark.tags) ? bookmark.tags.join(", ") : ""
+    parseTagsToArray(bookmark.tags).join(",")
   )
   const titleInputRef = useRef<HTMLInputElement>(null)
   const urlInputRef = useRef<HTMLInputElement>(null)
@@ -118,11 +143,21 @@ export default function Bookmark({
   >("none")
 
   useEffect(() => {
-    console.log("bookmark.title", newTitle)
-    console.log("bookmark.url", newUrl)
+    // console.log("bookmark.title", newTitle)
+    // console.log("bookmark.url", newUrl)
   }, [newTitle, newUrl])
 
-  // Enable drag only on mobile/touch and small viewports
+  useEffect(() => {
+    if (editingStage === "tags") {
+      if (!newTagsString || newTagsString.trim().length === 0) {
+        const parsed = parseTagsToArray(bookmark.tags)
+        if (parsed.length > 0) {
+          setNewTagsString(parsed.join(","))
+        }
+      }
+    }
+  }, [editingStage])
+
   useEffect(() => {
     const detectIsMobile = () => {
       if (typeof window === "undefined") return false
@@ -189,8 +224,8 @@ export default function Bookmark({
           key={0}
           role="button"
           tabIndex={0}
-          className="flex items-center gap-2"
-          title={Array.isArray(bookmark.tags) ? bookmark.tags.join(", ") : ""}
+          className="flex items-center gap-2 hover:bg-gray-100 hover:shadow-[0_0_0_8px_#F3F4F6] rounded-xs"
+          title={parseTagsToArray(bookmark.tags).join(", ")}
         >
           <img
             src={bookmark.favicon}
@@ -199,9 +234,7 @@ export default function Bookmark({
             onClick={() => {
               setNewTitle(bookmark.title)
               setNewUrl(bookmark.url)
-              setNewTagsString(
-                Array.isArray(bookmark.tags) ? bookmark.tags.join(", ") : ""
-              )
+              setNewTagsString(parseTagsToArray(bookmark.tags).join(","))
               setIsEditing(true)
               setEditingStage("title")
             }}
@@ -248,7 +281,7 @@ export default function Bookmark({
           role="button"
           tabIndex={0}
           className="flex items-center gap-2"
-          title={Array.isArray(bookmark.tags) ? bookmark.tags.join(", ") : ""}
+          title={parseTagsToArray(bookmark.tags).join(", ")}
         >
           <img
             src={bookmark.favicon}

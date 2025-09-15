@@ -14,7 +14,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { url, tags } = body as { url?: string; tags?: string[] }
+    const { url, tags } = body as { url?: string; tags?: string[] | string }
 
     if (!url) {
       return NextResponse.json({ error: "URL is required" }, { status: 400 })
@@ -54,8 +54,16 @@ export async function POST(request: Request) {
       console.error("Peekalink lookup failed, using fallback title:", e)
     }
 
-    // Normalize tags to array
-    const tagsArray: string[] = Array.isArray(tags) ? tags : []
+    // Normalize tags to array (supports array or newline-separated string)
+    let tagsArray: string[] = []
+    if (Array.isArray(tags)) {
+      tagsArray = tags
+    } else if (typeof tags === "string") {
+      tagsArray = tags
+        .split(/\r?\n/)
+        .map((t) => t.trim())
+        .filter(Boolean)
+    }
 
     // Insert into Supabase and return the created row
     const { data: inserted, error } = await supabaseAdmin

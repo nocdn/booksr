@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect, useRef } from "react"
-import { Loader, Plus, X } from "lucide-react"
+import { ArrowUp, Loader, Plus, X } from "lucide-react"
 import { motion, AnimatePresence } from "motion/react"
 import { Badge } from "@/components/ui/badge"
 
@@ -21,7 +21,6 @@ type Tag = {
   value: string
   label: string
   textColor: string
-  bgColor: string
 }
 
 export default function Search({
@@ -39,6 +38,16 @@ export default function Search({
   const [availableTags, setAvailableTags] = useState<Tag[]>(tags)
   const [tagSearchValue, setTagSearchValue] = React.useState("")
   const [isMobileViewport, setIsMobileViewport] = useState(false)
+  const [newTagValue, setNewTagValue] = useState("")
+
+  useEffect(() => {
+    setAvailableTags((prev) => {
+      // Keep previously removed tags removed; merge new ones
+      const existing = new Set(prev.map((t) => t.value))
+      const additions = tags.filter((t) => !existing.has(t.value))
+      return [...prev, ...additions]
+    })
+  }, [tags])
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -240,9 +249,46 @@ export default function Search({
                     autoFocus
                     placeholder="Filter tags"
                     className="h-9 font-semibold"
+                    value={newTagValue}
+                    onValueChange={(v) => {
+                      setNewTagValue(v)
+                      setTagSearchValue(v)
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter") return
+                      const inputValue = newTagValue.trim()
+                      if (!inputValue) return
+                      const lower = inputValue.toLowerCase()
+                      const hasMatch = availableTags.some(
+                        (t) =>
+                          t.label.toLowerCase().includes(lower) ||
+                          t.value.toLowerCase().includes(lower)
+                      )
+                      if (!hasMatch) {
+                        e.preventDefault()
+                        setTagList((prev) =>
+                          prev.includes(inputValue)
+                            ? prev
+                            : [...prev, inputValue]
+                        )
+                        setNewTagValue("")
+                        setTagSearchValue("")
+                        setShowingCommand(false)
+                        setTimeout(() => {
+                          firstInput.current?.focus()
+                        }, 0)
+                      }
+                    }}
                   />
                   <CommandList>
-                    <CommandEmpty>No tags found.</CommandEmpty>
+                    <CommandEmpty>
+                      <div className="opacity-50 font-jetbrains-mono flex justify-center items-center gap-1">
+                        <div className="px-1.5 py-0.5 bg-gray-200 rounded-sm w-fit font-semibold text-[13px] mr-0.5">
+                          ENTER
+                        </div>{" "}
+                        <p className="font-sans">to submit</p>
+                      </div>
+                    </CommandEmpty>
                     <CommandGroup>
                       {availableTags.map((option) => (
                         <CommandItem
@@ -282,10 +328,10 @@ export default function Search({
                           <div
                             className="w-2 h-2 rounded-full"
                             style={{
-                              backgroundColor: option.bgColor,
+                              backgroundColor: "#E5E7EB",
                             }}
                           />
-                          {option.label}
+                          <span className="capitalize">{option.label}</span>
                           <Check
                             className={cn(
                               "ml-auto",
@@ -330,7 +376,7 @@ export default function Search({
                 variant="secondary"
                 className="flex items-center gap-1 bg-neutral-100 text-neutral-800 hover:text-red-500 hover:bg-red-100 dark:bg-neutral-800 dark:text-neutral-100 transition-colors duration-75"
               >
-                <span>{tag}</span>
+                <span className="capitalize">{tag}</span>
                 <button
                   type="button"
                   aria-label={`Remove ${tag}`}

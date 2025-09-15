@@ -4,38 +4,13 @@ import { useEffect, useState } from "react"
 import Bookmark from "@/components/Bookmark"
 
 export default function Home() {
-  const tags = [
-    {
-      value: "fonts",
-      label: "Fonts",
-      textColor: "#00664F",
-      bgColor: "#E1FAE7",
-    },
-    {
-      value: "inspiration",
-      label: "Inspiration",
-      textColor: "#004D80",
-      bgColor: "#E3F4FF",
-    },
-    {
-      value: "employment",
-      label: "Employment",
-      textColor: "#803300",
-      bgColor: "#FEEEED",
-    },
-    {
-      value: "animations",
-      label: "Animations",
-      textColor: "#004D80",
-      bgColor: "#F8F5FF",
-    },
-    {
-      value: "icons",
-      label: "Icons",
-      textColor: "#803300",
-      bgColor: "#FFF4EE",
-    },
-  ]
+  type SearchTag = { value: string; label: string; textColor: string }
+  const toTag = (label: string): SearchTag => ({
+    value: String(label).toLowerCase(),
+    label: String(label),
+    textColor: "#111827",
+  })
+  const [tags, setTags] = useState<SearchTag[]>([])
 
   const handleSubmit = (tags: string[], url: string) => {
     setIsLoading(true)
@@ -53,6 +28,22 @@ export default function Home() {
       .then((data) => {
         if (!data) return
         setBookmarks((prev) => [data, ...prev])
+        try {
+          const newTags = Array.isArray(data.tags)
+            ? data.tags
+            : JSON.parse(data.tags ?? "[]")
+          setTags((prev) => {
+            const existing = new Set(prev.map((t) => t.value))
+            const additions = (newTags as string[])
+              .map((t) => t?.trim())
+              .filter((t): t is string => Boolean(t && t.length > 0))
+              .map(toTag)
+              .filter((t) => !existing.has(t.value))
+            const next = [...prev, ...additions]
+            next.sort((a, b) => a.label.localeCompare(b.label))
+            return next
+          })
+        } catch {}
         setIsLoading(false)
       })
       .catch((err) => {
@@ -76,6 +67,30 @@ export default function Home() {
         }
 
         setBookmarks(json)
+        console.log("bookmarks", json)
+
+        // go through each bookmark and add the tags from it to a set of tags so unique
+        const uniqueTags = new Set<string>()
+        for (const bookmark of json) {
+          let bookmarkTags: string[] = []
+          if (Array.isArray(bookmark.tags)) {
+            bookmarkTags = bookmark.tags
+          } else if (typeof bookmark.tags === "string") {
+            try {
+              bookmarkTags = JSON.parse(bookmark.tags)
+            } catch {}
+          }
+          for (const tag of bookmarkTags) {
+            if (typeof tag === "string" && tag.trim()) {
+              uniqueTags.add(tag)
+            }
+          }
+        }
+        const sortedLabels = Array.from(uniqueTags).sort((a, b) =>
+          a.localeCompare(b)
+        )
+        setTags(sortedLabels.map(toTag))
+        console.log("tags", tags)
       } catch (err) {
         console.error("Request failed:", err)
       } finally {
