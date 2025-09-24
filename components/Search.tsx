@@ -28,11 +28,13 @@ export default function Search({
   onSubmit,
   isLoading,
   onFilterChange,
+  resetTrigger,
 }: {
   tags: Tag[]
   onSubmit: (tags: string[], url: string) => void
   isLoading: boolean
   onFilterChange?: (query: string, selectedTags: string[]) => void
+  resetTrigger?: number
 }) {
   const firstInput = useRef<HTMLInputElement>(null)
   const [tagList, setTagList] = useState<string[]>([])
@@ -105,6 +107,20 @@ export default function Search({
     onFilterChange?.(query, tagList)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, tagList])
+
+  useEffect(() => {
+    if (resetTrigger === undefined) return
+    setQuery("")
+    setTagList([])
+    setAvailableTags(tags)
+    setNewTagValue("")
+    setTagSearchValue("")
+    setShowingCommand(false)
+    setTimeout(() => {
+      firstInput.current?.focus()
+    }, 0)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resetTrigger, tags])
 
   return (
     <div
@@ -343,7 +359,7 @@ export default function Search({
             >
               <Badge
                 variant="secondary"
-                className="flex items-center gap-1 bg-neutral-100 text-neutral-800 hover:text-red-500 hover:bg-red-100 dark:bg-neutral-800 dark:text-neutral-100 transition-colors duration-75"
+                className="flex items-center gap-1 bg-[#edf8ff] border-[#a1d9ff8f] hover:border-red-500/20 text-[#004D80] hover:text-red-500 hover:bg-red-100 dark:bg-neutral-800 dark:text-neutral-100 transition-colors duration-75"
               >
                 <span className="capitalize">{tag}</span>
                 <button

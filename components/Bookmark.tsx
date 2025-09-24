@@ -221,6 +221,10 @@ export default function Bookmark({
       {!isEditing ? (
         <motion.div
           layout
+          transition={{
+            duration: 0.2,
+            ease: [0.175, 0.885, 0.32, 1],
+          }}
           key={0}
           role="button"
           tabIndex={0}
@@ -230,7 +234,7 @@ export default function Bookmark({
           <img
             src={bookmark.favicon}
             alt={bookmark.title}
-            className="h-4 w-4 cursor-pointer"
+            className="h-4 w-4 cursor-pointer -translate-y-[0.85px] rounded-[1px]"
             onClick={() => {
               setNewTitle(bookmark.title)
               setNewUrl(bookmark.url)
@@ -286,7 +290,7 @@ export default function Bookmark({
           <img
             src={bookmark.favicon}
             alt={bookmark.title}
-            className="h-4 w-4 cursor-pointer"
+            className="h-4 w-4 cursor-pointer -translate-y-[0.85px] rounded-[1px]"
             onClick={() => {
               setIsEditing(false)
               setEditingStage("none")

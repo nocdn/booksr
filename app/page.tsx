@@ -44,6 +44,7 @@ export default function Home() {
             return next
           })
         } catch {}
+        setResetTrigger((prev) => prev + 1)
         setIsLoading(false)
       })
       .catch((err) => {
@@ -56,6 +57,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true)
   const [filterQuery, setFilterQuery] = useState("")
   const [filterTags, setFilterTags] = useState<string[]>([])
+  const [resetTrigger, setResetTrigger] = useState(0)
 
   const parseTagsToArray = (tags: unknown): string[] => {
     if (Array.isArray(tags)) {
@@ -166,6 +168,7 @@ export default function Home() {
         tags={tags}
         onSubmit={handleSubmit}
         isLoading={isLoading}
+        resetTrigger={resetTrigger}
         onFilterChange={(q, selected) => {
           setFilterQuery(q)
           setFilterTags(selected)
@@ -175,7 +178,7 @@ export default function Home() {
         <p className="font-lars">Title</p>
         <p className="font-lars">Created at</p>
       </div>
-      <div className="mx-0.5 flex flex-col gap-4 w-full md:w-2xl mt-2.5">
+      <div className="mx-0.5 flex flex-col gap-4 w-full md:w-2xl mt-2.5 mb-24">
         {filteredBookmarks.map((bookmark, index) => (
           <Bookmark
             key={bookmark.id}
