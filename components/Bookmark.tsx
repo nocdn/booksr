@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react"
-import { Check, X, SaveAll } from "lucide-react"
+import { X } from "lucide-react"
 import { AnimatePresence, motion } from "motion/react"
+import { Drawer } from "vaul"
 
 // --- Types ---
 export type BookmarkType = {
